@@ -86,31 +86,34 @@ The script will display an interactive menu with the following options:
 - **Android Studio**: Android development IDE
 
 ### Shell & Terminal
-- **Zsh**: Advanced shell
-- **Zsh Autosuggestions**: Fish-like autosuggestions
-- **Exa**: Modern replacement for ls
-- **Nano**: Simple text editor
+- **Zsh**: Advanced shell (APT)
+- **Starship**: Cross-shell prompt (Homebrew)
+- **Zsh Autosuggestions**: Fish-like autosuggestions (Homebrew)
+- **Exa**: Modern replacement for ls (APT)
+- **Nano**: Simple text editor (APT)
 
 ### Databases
-- **SQLite**: Lightweight database
-- **MySQL**: Relational database server
+- **SQLite**: Lightweight database (Homebrew)
+- **MySQL**: Relational database server (Homebrew)
 
 ### Development Tools
-- **Git**: Version control system
-- **NPM**: Node package manager
-- **PNPM**: Fast, disk space efficient package manager
-- **Docker**: Container platform
+- **Git**: Version control system (APT)
+- **NVM**: Node Version Manager (Homebrew)
+- **NPM**: Node package manager (APT)
+- **PNPM**: Fast, disk space efficient package manager (NPM global)
+- **Docker**: Container platform (APT)
 - **Docker Compose V2**: Multi-container orchestration (manual plugin installation)
-- **Nginx**: Web server
-- **OpenSSH Server**: Secure shell server
+- **Nginx**: Web server (Homebrew)
+- **OpenSSH Server**: Secure shell server (APT)
+- **OpenJDK 21**: Java Development Kit (Homebrew)
 
 ### Python Tools
-- **Python3-pip**: Python package installer
-- **Python3-venv**: Virtual environment support
-- **FastAPI**: Modern Python web framework
-- **Uvicorn**: ASGI server
-- **Alembic**: Database migration tool
-- **Pyenv**: Python version manager
+- **Python3-pip**: Python package installer (APT)
+- **Python3-venv**: Virtual environment support (APT)
+- **FastAPI**: Modern Python web framework (Pip)
+- **Uvicorn**: ASGI server (Pip)
+- **Alembic**: Database migration tool (Homebrew)
+- **Pyenv**: Python version manager (Homebrew)
 
 ### Build Tools
 - **CMake**: Cross-platform build system
@@ -150,11 +153,33 @@ The script will display an interactive menu with the following options:
 
 ### Homebrew Packages (Optional)
 - **FVM**: Flutter Version Manager
+- **NVM**: Node Version Manager
+- **Starship**: Modern cross-shell prompt
 - **Zsh Autosuggestions**: Via Homebrew
 - **OpenJDK 21**: Java Development Kit
-- **Pyenv**: Python version manager (alternative installation)
+- **Pyenv**: Python version manager
+- **Alembic**: Database migration tool
+- **Nginx**: High-performance web server
+- **SQLite**: Lightweight database
+- **MySQL**: Relational database server
 
 ## Special Notes
+
+### Package Manager Strategy
+This script uses a **hybrid approach** for maximum compatibility and performance:
+
+- **APT**: System packages, basic tools, GUI applications
+- **Snap**: Cross-distribution applications (VS Code, browsers, productivity apps)
+- **Flatpak**: Universal packages (LibreOffice, utilities)
+- **Homebrew**: Development tools (Pyenv, NVM, databases, Nginx, Alembic, etc.)
+- **NPM**: Node.js global packages (PNPM)
+- **Pip**: Python packages (FastAPI, Uvicorn)
+
+**Why Homebrew for dev tools?**
+- Consistent versions across Linux/macOS
+- Easier version management
+- Better isolation from system packages
+- Self-contained installations
 
 ### VS Code Installation
 This script installs VS Code using the **official Microsoft repository**, not via snap. This provides:
@@ -184,9 +209,29 @@ chsh -s $(which zsh)
 ```
 
 ### Pyenv Configuration
-The script automatically adds Pyenv to your `.bashrc`. Restart your terminal or run:
+The script automatically adds Pyenv to your `.bashrc` via Homebrew installation. Restart your terminal or run:
 ```bash
 source ~/.bashrc
+pyenv install 3.11.0
+pyenv global 3.11.0
+```
+
+### NVM Configuration
+NVM is automatically configured in `.bashrc`. To install Node.js:
+```bash
+source ~/.bashrc
+nvm install --lts
+nvm use --lts
+```
+
+### Starship Prompt
+Starship is automatically configured in `.bashrc`. Restart your terminal to see the new prompt.
+
+### MySQL & Nginx Services
+Start services via Homebrew:
+```bash
+brew services start mysql
+brew services start nginx
 ```
 
 ## Interactive Configuration
@@ -224,11 +269,13 @@ The script automatically creates:
 After running the script:
 
 1. **Log out and log back in** for group changes (Docker) to take effect
-2. **Restart your terminal** for shell configuration changes
+2. **Restart your terminal** for shell configuration changes (Homebrew, Pyenv, NVM, Starship)
 3. **Set Zsh as default** (optional): `chsh -s $(which zsh)`
-4. **Configure Pyenv** to install Python versions: `pyenv install 3.11.0`
-5. **Configure FVM** to install Flutter versions: `fvm install stable`
-6. **Review the log file** for any errors or warnings
+4. **Install Python version**: `pyenv install 3.11.0 && pyenv global 3.11.0`
+5. **Install Node.js**: `nvm install --lts && nvm use --lts`
+6. **Install Flutter**: `fvm install stable && fvm global stable`
+7. **Start services**: `brew services start mysql` and `brew services start nginx`
+8. **Review the log file** for any errors or warnings
 
 ## Tips
 

@@ -169,26 +169,9 @@ install_python_env() {
     print_section "Installing Python Environment"
     
     run_command "sudo apt install -y python3-pip python3-venv" "Python tools installed"
-    run_command "pip3 install fastapi uvicorn alembic" "FastAPI, Uvicorn and Alembic installed"
+    run_command "pip3 install fastapi uvicorn" "FastAPI and Uvicorn installed"
     
-    print_info "Installing Pyenv..."
-    if curl https://pyenv.run | bash >> "$LOG_FILE" 2>&1; then
-        print_success "Pyenv installed"
-        
-        # Add pyenv to shell
-        if ! grep -q 'pyenv init' "$HOME/.bashrc"; then
-            cat >> "$HOME/.bashrc" << 'EOF'
-
-# Pyenv configuration
-export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-EOF
-            print_success "Pyenv added to .bashrc"
-        fi
-    else
-        print_error "Failed to install Pyenv"
-    fi
+    print_info "Pyenv will be installed via Homebrew (option 18)"
     
     log_action "Python environment configured"
 }
@@ -276,11 +259,13 @@ install_fonts() {
 install_system_tools() {
     print_section "Installing System Tools"
     
-    run_command "sudo apt install -y nginx openssh-server" "Nginx and SSH installed"
+    run_command "sudo apt install -y openssh-server" "SSH server installed"
     run_command "sudo apt install -y nano exa" "Text editor and ls replacement"
     run_command "sudo apt install -y kde-spectacle" "Screenshot tool installed"
     run_command "sudo apt install -y cmake automake ninja-build clang" "Build tools installed"
     run_command "sudo apt install -y flatpak" "Flatpak installed"
+    
+    print_info "Nginx will be installed via Homebrew (option 18)"
 }
 
 install_flatpak_apps() {
@@ -304,7 +289,8 @@ install_flatpak_apps() {
 install_databases() {
     print_section "Installing Databases"
     
-    run_command "sudo apt install -y sqlite3 mysql-server" "SQLite and MySQL installed"
+    print_info "SQLite and MySQL will be installed via Homebrew (option 18)"
+    print_info "Skipping APT database installation..."
 }
 
 install_homebrew() {
@@ -341,11 +327,65 @@ install_brew_packages() {
         return 1
     fi
     
+    # Development tools
+    run_command "brew install pyenv" "Pyenv installed"
+    run_command "brew install nvm" "NVM installed"
+    run_command "brew install openjdk@21" "OpenJDK 21 installed"
+    run_command "brew install nginx" "Nginx installed"
+    
+    # Databases
+    run_command "brew install sqlite" "SQLite installed"
+    run_command "brew install mysql" "MySQL installed"
+    
+    # Shell tools
+    run_command "brew install starship" "Starship prompt installed"
+    run_command "brew install zsh-autosuggestions" "Zsh autosuggestions installed"
+    
+    # Flutter tools
     run_command "brew tap leoafarias/fvm" "FVM tap added"
     run_command "brew install fvm" "FVM installed"
-    run_command "brew install zsh-autosuggestions" "Zsh autosuggestions installed"
-    run_command "brew install openjdk@21" "OpenJDK 21 installed"
-    run_command "brew install pyenv" "Pyenv (brew) installed"
+    
+    # Python tools
+    run_command "brew install alembic" "Alembic installed"
+    
+    # Configure NVM
+    if ! grep -q 'NVM_DIR' "$HOME/.bashrc"; then
+        cat >> "$HOME/.bashrc" << 'EOF'
+
+# NVM configuration
+export NVM_DIR="$HOME/.nvm"
+[ -s "/home/linuxbrew/.linuxbrew/opt/nvm/nvm.sh" ] && \. "/home/linuxbrew/.linuxbrew/opt/nvm/nvm.sh"
+[ -s "/home/linuxbrew/.linuxbrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/home/linuxbrew/.linuxbrew/opt/nvm/etc/bash_completion.d/nvm"
+EOF
+        print_success "NVM added to .bashrc"
+    fi
+    
+    # Configure Pyenv
+    if ! grep -q 'pyenv init' "$HOME/.bashrc"; then
+        cat >> "$HOME/.bashrc" << 'EOF'
+
+# Pyenv configuration
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+EOF
+        print_success "Pyenv added to .bashrc"
+    fi
+    
+    # Configure Starship
+    if ! grep -q 'starship init' "$HOME/.bashrc"; then
+        echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
+        print_success "Starship added to .bashrc"
+    fi
+    
+    # Configure Zsh autosuggestions
+    if ! grep -q 'zsh-autosuggestions' "$HOME/.zshrc" 2>/dev/null; then
+        echo 'source /home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> "$HOME/.zshrc"
+        print_success "Zsh autosuggestions added to .zshrc"
+    fi
+    
+    print_info "MySQL service: brew services start mysql"
+    print_info "Nginx service: brew services start nginx"
 }
 
 install_zsh() {
