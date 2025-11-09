@@ -76,6 +76,15 @@ run_command() {
     fi
 }
 
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    else
+        echo "unknown"
+    fi
+}
+
 # ============================================
 # System Functions
 # ============================================
@@ -184,10 +193,9 @@ install_snap_apps() {
         "chatgpt-desktop:ChatGPT Desktop"
         "notion-snap-reborn:Notion"
         "trello-desktop:Trello"
-        "whatsapp-linux-app:WhatsApp"
+        "whatsapp-linux-desktop:WhatsApp"
         "deepseek-desktop:DeepSeek"
         "android-studio --classic:Android Studio"
-        "firefox:Firefox"
         "opera:Opera"
         "spotify:Spotify"
         "slack --classic:Slack"
@@ -197,6 +205,22 @@ install_snap_apps() {
         IFS=':' read -r cmd desc <<< "$app"
         run_command "sudo snap install $cmd" "$desc"
     done
+}
+
+install_firefox() {
+    print_section "Installing Firefox (Optional)"
+    
+    if command -v firefox &> /dev/null; then
+        print_warning "Firefox is already installed on your system"
+        echo -n "Do you want to install Firefox from Snap anyway? (y/N): "
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            print_info "Skipping Firefox installation"
+            return 0
+        fi
+    fi
+    
+    run_command "sudo snap install firefox" "Firefox"
 }
 
 install_nodejs_tools() {
@@ -275,7 +299,7 @@ install_flatpak_apps() {
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo >> "$LOG_FILE" 2>&1
     
     local apps=(
-        "org.libreoffice.LibreOffice:LibreOffice"
+        "org.onlyoffice.desktopeditors:OnlyOffice"
         "io.github.thetumultuousunicornofdarkness.cpu-x:CPU-X"
         "com.github.jeromerobert.pdfarranger:PDF Arranger"
     )
@@ -409,6 +433,86 @@ configure_git() {
     run_command "git config --global user.email '$GIT_EMAIL'" "Git email configured"
 }
 
+install_nvidia_drivers() {
+    print_section "NVIDIA Drivers - Manual Installation Guide"
+    
+    local distro=$(detect_distro)
+    
+    print_info "Detected distribution: $distro"
+    echo ""
+    
+    if [ "$distro" = "ubuntu" ] || [ "$distro" = "neon" ] || [ "$distro" = "pop" ] || [ "$distro" = "linuxmint" ]; then
+        print_info "Ubuntu-based system detected"
+        echo ""
+        echo -e "${CYAN}Step 1:${NC} Check available NVIDIA drivers:"
+        echo -e "   ${GREEN}ubuntu-drivers devices${NC}"
+        echo ""
+        echo -e "${CYAN}Step 2:${NC} Install recommended driver:"
+        echo -e "   ${GREEN}sudo ubuntu-drivers autoinstall${NC}"
+        echo ""
+        echo -e "${CYAN}Alternative:${NC} Install specific driver version:"
+        echo -e "   ${GREEN}sudo apt install nvidia-driver-XXX${NC}"
+        echo "   (Replace XXX with the version number)"
+        echo ""
+        echo -e "${CYAN}Step 3:${NC} Reboot your system:"
+        echo -e "   ${GREEN}sudo reboot${NC}"
+        echo ""
+        echo -e "${CYAN}Step 4:${NC} Verify installation:"
+        echo -e "   ${GREEN}nvidia-smi${NC}"
+        
+    elif [ "$distro" = "debian" ]; then
+        print_info "Debian system detected"
+        echo ""
+        echo -e "${CYAN}Step 1:${NC} Add non-free repositories to /etc/apt/sources.list"
+        echo "   Add 'contrib non-free non-free-firmware' to each line"
+        echo ""
+        echo -e "${CYAN}Step 2:${NC} Update package lists:"
+        echo -e "   ${GREEN}sudo apt update${NC}"
+        echo ""
+        echo -e "${CYAN}Step 3:${NC} Check available drivers:"
+        echo -e "   ${GREEN}apt search nvidia-driver${NC}"
+        echo ""
+        echo -e "${CYAN}Step 4:${NC} Install NVIDIA driver:"
+        echo -e "   ${GREEN}sudo apt install nvidia-driver firmware-misc-nonfree${NC}"
+        echo ""
+        echo -e "${CYAN}Step 5:${NC} Reboot your system:"
+        echo -e "   ${GREEN}sudo reboot${NC}"
+        echo ""
+        echo -e "${CYAN}Step 6:${NC} Verify installation:"
+        echo -e "   ${GREEN}nvidia-smi${NC}"
+        
+    else
+        print_warning "Distribution '$distro' not directly supported"
+        echo ""
+        print_info "For Ubuntu-based distributions, try:"
+        echo -e "   ${GREEN}ubuntu-drivers devices${NC}"
+        echo -e "   ${GREEN}sudo ubuntu-drivers autoinstall${NC}"
+        echo ""
+        print_info "For Debian-based distributions, try:"
+        echo -e "   ${GREEN}sudo apt install nvidia-driver${NC}"
+    fi
+    
+    echo ""
+    print_warning "IMPORTANT: Always reboot after installing NVIDIA drivers"
+    print_info "These commands are provided for manual installation only"
+    
+    log_action "Displayed NVIDIA driver installation instructions for: $distro"
+}
+
+show_system_info() {
+    print_section "System Information"
+    
+    if [ -f /etc/os-release ]; then
+        cat /etc/os-release
+    else
+        print_error "Unable to detect system information"
+    fi
+    
+    echo ""
+    print_info "Press ENTER to continue..."
+    read
+}
+
 # ============================================
 # Interactive Menu
 # ============================================
@@ -425,18 +529,21 @@ show_menu() {
     echo "7)  Install security tools"
     echo "8)  Install Python environment"
     echo "9)  Install Snap applications"
-    echo "10) Install Node.js tools"
-    echo "11) Install Docker"
-    echo "12) Install browsers"
-    echo "13) Install fonts"
-    echo "14) Install system tools"
-    echo "15) Install Flatpak applications"
-    echo "16) Install databases"
-    echo "17) Install Homebrew"
-    echo "18) Install Homebrew packages"
-    echo "19) Install Zsh"
-    echo "20) Configure Git"
-    echo "21) View installation log"
+    echo "10) Install Firefox (optional)"
+    echo "11) Install Node.js tools"
+    echo "12) Install Docker"
+    echo "13) Install browsers"
+    echo "14) Install fonts"
+    echo "15) Install system tools"
+    echo "16) Install Flatpak applications (OnlyOffice)"
+    echo "17) Install databases"
+    echo "18) Install Homebrew"
+    echo "19) Install Homebrew packages"
+    echo "20) Install Zsh"
+    echo "21) Configure Git"
+    echo "22) Install NVIDIA drivers"
+    echo "23) Show system information"
+    echo "24) View installation log"
     echo "0)  Exit"
     echo ""
     echo -n "Choose an option: "
@@ -454,6 +561,7 @@ run_full_setup() {
     install_security_tools
     install_python_env
     install_snap_apps
+    install_firefox
     install_nodejs_tools
     install_docker
     install_browsers
@@ -465,6 +573,7 @@ run_full_setup() {
     install_brew_packages
     install_zsh
     configure_git
+    install_nvidia_drivers
     
     echo ""
     print_section "Setup Summary"
@@ -508,18 +617,21 @@ main() {
             7) install_security_tools ;;
             8) install_python_env ;;
             9) install_snap_apps ;;
-            10) install_nodejs_tools ;;
-            11) install_docker ;;
-            12) install_browsers ;;
-            13) install_fonts ;;
-            14) install_system_tools ;;
-            15) install_flatpak_apps ;;
-            16) install_databases ;;
-            17) install_homebrew ;;
-            18) install_brew_packages ;;
-            19) install_zsh ;;
-            20) configure_git ;;
-            21) cat "$LOG_FILE" | less ;;
+            10) install_firefox ;;
+            11) install_nodejs_tools ;;
+            12) install_docker ;;
+            13) install_browsers ;;
+            14) install_fonts ;;
+            15) install_system_tools ;;
+            16) install_flatpak_apps ;;
+            17) install_databases ;;
+            18) install_homebrew ;;
+            19) install_brew_packages ;;
+            20) install_zsh ;;
+            21) configure_git ;;
+            22) install_nvidia_drivers ;;
+            23) show_system_info ;;
+            24) cat "$LOG_FILE" | less ;;
             0) 
                 print_success "Goodbye!"
                 log_action "Script finished"
