@@ -4,7 +4,6 @@
 # Debian/Ubuntu Development Environment Setup
 # ============================================
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,7 +12,6 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Global variables
 LOG_FILE="$HOME/debian_setup_$(date +%Y%m%d_%H%M%S).log"
 TOTAL_INSTALLED=0
 
@@ -322,23 +320,31 @@ install_homebrew() {
     
     if command -v brew &> /dev/null; then
         print_info "Homebrew already installed"
+        brew --version | head -n 1
         return 0
     fi
     
     print_info "Installing Homebrew..."
-    if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >> "$LOG_FILE" 2>&1; then
-        print_success "Homebrew installed"
-        
-        # Add Homebrew to PATH
-        if ! grep -q 'linuxbrew' "$HOME/.bashrc"; then
-            echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.bashrc"
-            print_success "Homebrew added to .bashrc"
+    
+    if NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >> "$LOG_FILE" 2>&1; then
+        print_success "Homebrew installed successfully"
+    
+        if [[ -f "/home/linuxbrew/.linuxbrew/bin/brew" ]]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+            
+            if ! grep -q 'linuxbrew' "$HOME/.bashrc"; then
+                echo '' >> "$HOME/.bashrc"
+                echo '# Homebrew configuration' >> "$HOME/.bashrc"
+                echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.bashrc"
+                print_success "Homebrew added to .bashrc"
+            fi
         fi
         
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         log_action "Homebrew installed"
+        return 0
     else
         print_error "Failed to install Homebrew"
+        log_action "ERROR: Homebrew installation failed"
         return 1
     fi
 }
@@ -351,28 +357,22 @@ install_brew_packages() {
         return 1
     fi
     
-    # Development tools
     run_command "brew install pyenv" "Pyenv installed"
     run_command "brew install nvm" "NVM installed"
     run_command "brew install openjdk@21" "OpenJDK 21 installed"
     run_command "brew install nginx" "Nginx installed"
     
-    # Databases
     run_command "brew install sqlite" "SQLite installed"
     run_command "brew install mysql" "MySQL installed"
     
-    # Shell tools
     run_command "brew install starship" "Starship prompt installed"
     run_command "brew install zsh-autosuggestions" "Zsh autosuggestions installed"
     
-    # Flutter tools
     run_command "brew tap leoafarias/fvm" "FVM tap added"
     run_command "brew install fvm" "FVM installed"
     
-    # Python tools
     run_command "brew install alembic" "Alembic installed"
     
-    # Configure NVM
     if ! grep -q 'NVM_DIR' "$HOME/.bashrc"; then
         cat >> "$HOME/.bashrc" << 'EOF'
 
@@ -384,7 +384,6 @@ EOF
         print_success "NVM added to .bashrc"
     fi
     
-    # Configure Pyenv
     if ! grep -q 'pyenv init' "$HOME/.bashrc"; then
         cat >> "$HOME/.bashrc" << 'EOF'
 
@@ -396,13 +395,11 @@ EOF
         print_success "Pyenv added to .bashrc"
     fi
     
-    # Configure Starship
     if ! grep -q 'starship init' "$HOME/.bashrc"; then
         echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
         print_success "Starship added to .bashrc"
     fi
     
-    # Configure Zsh autosuggestions
     if ! grep -q 'zsh-autosuggestions' "$HOME/.zshrc" 2>/dev/null; then
         echo 'source /home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> "$HOME/.zshrc"
         print_success "Zsh autosuggestions added to .zshrc"
@@ -593,13 +590,11 @@ run_full_setup() {
 # ============================================
 
 main() {
-    # Check if Debian/Ubuntu
     if [ ! -f /etc/debian_version ]; then
         print_error "This script is for Debian/Ubuntu only!"
         exit 1
     fi
     
-    # Create log file
     touch "$LOG_FILE"
     log_action "Starting setup script"
     
