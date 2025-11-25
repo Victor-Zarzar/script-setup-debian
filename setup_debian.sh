@@ -431,69 +431,113 @@ configure_git() {
 }
 
 install_nvidia_drivers() {
-    print_section "NVIDIA Drivers - Manual Installation Guide"
+    print_section "NVIDIA Drivers Installation"
     
     local distro=$(detect_distro)
     
+    print_info "Checking for NVIDIA GPU..."
+    if lspci | grep -i nvidia &> /dev/null; then
+        print_success "NVIDIA GPU detected!"
+        lspci | grep -i nvidia
+    else
+        print_warning "No NVIDIA GPU detected in this system"
+        echo ""
+        print_info "Press ENTER to continue..."
+        read
+        return 0
+    fi
+    
+    echo ""
     print_info "Detected distribution: $distro"
     echo ""
     
     if [ "$distro" = "ubuntu" ] || [ "$distro" = "neon" ] || [ "$distro" = "pop" ] || [ "$distro" = "linuxmint" ]; then
         print_info "Ubuntu-based system detected"
         echo ""
-        echo -e "${CYAN}Step 1:${NC} Check available NVIDIA drivers:"
-        echo -e "   ${GREEN}ubuntu-drivers devices${NC}"
+        echo -e "${CYAN}Checking available NVIDIA drivers...${NC}"
+        ubuntu-drivers devices
         echo ""
-        echo -e "${CYAN}Step 2:${NC} Install recommended driver:"
-        echo -e "   ${GREEN}sudo ubuntu-drivers autoinstall${NC}"
-        echo ""
-        echo -e "${CYAN}Alternative:${NC} Install specific driver version:"
-        echo -e "   ${GREEN}sudo apt install nvidia-driver-XXX${NC}"
-        echo "   (Replace XXX with the version number)"
-        echo ""
-        echo -e "${CYAN}Step 3:${NC} Reboot your system:"
-        echo -e "   ${GREEN}sudo reboot${NC}"
-        echo ""
-        echo -e "${CYAN}Step 4:${NC} Verify installation:"
-        echo -e "   ${GREEN}nvidia-smi${NC}"
+        echo -n "Install recommended NVIDIA driver automatically? (Y/n): "
+        read -r response
+        
+        if [[ ! "$response" =~ ^[Nn]$ ]]; then
+            run_command "sudo ubuntu-drivers autoinstall" "NVIDIA driver installed"
+            echo ""
+            print_warning "You must reboot for changes to take effect"
+            echo -n "Reboot now? (y/N): "
+            read -r reboot_response
+            if [[ "$reboot_response" =~ ^[Yy]$ ]]; then
+                sudo reboot
+            fi
+        else
+            print_info "Manual installation - use: sudo apt install nvidia-driver-XXX"
+        fi
         
     elif [ "$distro" = "debian" ]; then
         print_info "Debian system detected"
         echo ""
-        echo -e "${CYAN}Step 1:${NC} Add non-free repositories to /etc/apt/sources.list"
-        echo "   Add 'contrib non-free non-free-firmware' to each line"
+        
+        if ! grep -q "non-free" /etc/apt/sources.list; then
+            print_warning "Non-free repositories not detected in /etc/apt/sources.list"
+            echo ""
+            echo -n "Add non-free repositories? (Y/n): "
+            read -r response
+            
+            if [[ ! "$response" =~ ^[Nn]$ ]]; then
+                print_info "Backing up sources.list..."
+                sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+                
+                print_info "Adding non-free repositories..."
+                sudo sed -i 's/main$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
+                
+                run_command "sudo apt update" "Package lists updated"
+                print_success "Non-free repositories added"
+            else
+                print_warning "Cannot install NVIDIA drivers without non-free repositories"
+                return 1
+            fi
+        else
+            print_success "Non-free repositories already enabled"
+        fi
+        
         echo ""
-        echo -e "${CYAN}Step 2:${NC} Update package lists:"
-        echo -e "   ${GREEN}sudo apt update${NC}"
+        print_info "Available NVIDIA driver packages:"
+        apt search nvidia-driver 2>/dev/null | grep "nvidia-driver" | head -n 5
+        
         echo ""
-        echo -e "${CYAN}Step 3:${NC} Check available drivers:"
-        echo -e "   ${GREEN}apt search nvidia-driver${NC}"
-        echo ""
-        echo -e "${CYAN}Step 4:${NC} Install NVIDIA driver:"
-        echo -e "   ${GREEN}sudo apt install nvidia-driver firmware-misc-nonfree${NC}"
-        echo ""
-        echo -e "${CYAN}Step 5:${NC} Reboot your system:"
-        echo -e "   ${GREEN}sudo reboot${NC}"
-        echo ""
-        echo -e "${CYAN}Step 6:${NC} Verify installation:"
-        echo -e "   ${GREEN}nvidia-smi${NC}"
+        echo -n "Install NVIDIA driver and firmware? (Y/n): "
+        read -r response
+        
+        if [[ ! "$response" =~ ^[Nn]$ ]]; then
+            run_command "sudo apt install -y nvidia-driver firmware-misc-nonfree" "NVIDIA driver installed"
+            echo ""
+            print_warning "You must reboot for changes to take effect"
+            echo -n "Reboot now? (y/N): "
+            read -r reboot_response
+            if [[ "$reboot_response" =~ ^[Yy]$ ]]; then
+                sudo reboot
+            fi
+        else
+            print_info "Skipping NVIDIA driver installation"
+        fi
         
     else
         print_warning "Distribution '$distro' not directly supported"
         echo ""
-        print_info "For Ubuntu-based distributions, try:"
+        print_info "Generic installation instructions:"
+        echo ""
+        echo -e "${CYAN}For Ubuntu-based:${NC}"
         echo -e "   ${GREEN}ubuntu-drivers devices${NC}"
         echo -e "   ${GREEN}sudo ubuntu-drivers autoinstall${NC}"
         echo ""
-        print_info "For Debian-based distributions, try:"
-        echo -e "   ${GREEN}sudo apt install nvidia-driver${NC}"
+        echo -e "${CYAN}For Debian-based:${NC}"
+        echo -e "   ${GREEN}sudo apt install nvidia-driver firmware-misc-nonfree${NC}"
+        echo ""
+        print_info "Press ENTER to continue..."
+        read
     fi
     
-    echo ""
-    print_warning "IMPORTANT: Always reboot after installing NVIDIA drivers"
-    print_info "These commands are provided for manual installation only"
-    
-    log_action "Displayed NVIDIA driver installation instructions for: $distro"
+    log_action "NVIDIA driver installation processed for: $distro"
 }
 
 show_system_info() {
