@@ -13,16 +13,19 @@ A modular, idempotent automated setup script for Debian/Ubuntu that installs and
 ## What Gets Installed
 
 ### Text Editors & IDEs
+
 - Zed Editor (official installer)
 - Sublime Text (Snap)
 - Android Studio (Snap)
 
 ### Shell & Terminal
+
 - Zsh with autosuggestions
 - Starship prompt (Homebrew)
 - Exa (modern ls replacement)
 
 ### Development Tools
+
 - Git, Docker, Docker Compose V2
 - Node.js tools: NPM, PNPM, NVM, Bun
 - Python: Pip, Venv, FastAPI, Uvicorn, Pyenv
@@ -30,18 +33,26 @@ A modular, idempotent automated setup script for Debian/Ubuntu that installs and
 - OpenJDK 21, Nginx, OpenSSH Server
 
 ### Databases
+
 - SQLite, MySQL
 
 ### Applications
+
 - **Snap**: Postman, ChatGPT, Notion, Trello, WhatsApp, Slack, Telegram, Spotify, DeepSeek
 - **Flatpak**: LibreOffice, CPU-X, PDF Arranger
 - **Browsers**: Firefox, Google Chrome, Opera
 
+### Graphics & Drivers
+
+- **Nvidia Drivers**: Proprietary drivers with automatic detection and installation
+
 ### Security & Utilities
+
 - KeePassXC, LocalSend, OpenVPN
 - KDE Spectacle, JetBrains Mono font
 
 ### Homebrew Packages
+
 - FVM (Flutter Version Manager)
 - NVM, Pyenv, Alembic
 - Starship, Nginx, MySQL, SQLite
@@ -75,6 +86,7 @@ debian-setup/
 │   ├── manual.sh     # Manual installations (Zed, Bun, fonts)
 │   ├── docker.sh     # Docker and Compose setup
 │   ├── git.sh        # Git configuration
+│   ├── nvidia.sh     # Nvidia driver installation
 │   └── system.sh     # System configuration
 └── README.md
 ```
@@ -103,7 +115,8 @@ debian-setup/
 19) Install Zsh
 20) Configure Git
 21) Install Bun
-22) View installation log
+22) Install Nvidia drivers
+23) View installation log
  0) Exit
 ```
 
@@ -111,11 +124,26 @@ debian-setup/
 
 1. **Log out and log back in** for Docker group changes
 2. **Restart terminal** for shell configurations (Homebrew, Pyenv, NVM, Starship)
-3. **Set Zsh as default**: `chsh -s $(which zsh)`
-4. **Install Python**: `pyenv install 3.11.0 && pyenv global 3.11.0`
-5. **Install Node.js**: `nvm install --lts && nvm use --lts`
-6. **Install Flutter**: `fvm install stable && fvm global stable`
-7. **Start services**: `brew services start mysql && brew services start nginx`
+3. **Reboot system** if Nvidia drivers were installed
+4. **Set Zsh as default**: `chsh -s $(which zsh)`
+5. **Install Python**: `pyenv install 3.11.0 && pyenv global 3.11.0`
+6. **Install Node.js**: `nvm install --lts && nvm use --lts`
+7. **Install Flutter**: `fvm install stable && fvm global stable`
+8. **Start services**: `brew services start mysql && brew services start nginx`
+
+## Nvidia Drivers
+
+The script automatically detects Nvidia GPUs and installs the appropriate proprietary drivers. After installation:
+
+```bash
+# Verify installation
+nvidia-smi
+
+# Check driver version
+nvidia-detector
+```
+
+**Important**: A system reboot is required after Nvidia driver installation for changes to take effect.
 
 ## Docker Usage
 
@@ -134,19 +162,36 @@ Logs are created at: `~/debian_setup_YYYYMMDD_HHMMSS.log`
 ## Troubleshooting
 
 **Snap apps not appearing:**
+
 ```bash
 sudo systemctl restart snapd
 ```
 
 **Docker permission denied:**
+
 ```bash
 # Log out and log back in, then:
 docker run hello-world
 ```
 
 **Flatpak issues:**
+
 ```bash
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+```
+
+**Nvidia driver issues:**
+
+```bash
+# Check if Nvidia GPU is detected
+lspci | grep -i nvidia
+
+# Remove existing drivers (if needed)
+sudo apt remove --purge nvidia-*
+sudo apt autoremove
+
+# Reinstall using the script
+./setup.sh  # Select option 22
 ```
 
 ## License

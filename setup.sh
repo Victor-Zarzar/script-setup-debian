@@ -14,6 +14,7 @@ source "$LIB_DIR/manual.sh"
 source "$LIB_DIR/docker.sh"
 source "$LIB_DIR/git.sh"
 source "$LIB_DIR/system.sh"
+source "$LIB_DIR/nvidia.sh"
 
 show_menu() {
     clear
@@ -43,7 +44,8 @@ show_menu() {
     echo "19) Install Zsh"
     echo "20) Configure Git"
     echo "21) Install Bun"
-    echo "22) View installation log"
+    echo "22) Install Nvidia drivers"
+    echo "23) View installation log"
     echo " 0) Exit"
     echo ""
 }
@@ -70,6 +72,7 @@ run_complete_setup() {
     install_brew_packages
     install_zsh
     install_bun
+    install_nvidia_drivers
     install_localsend
 
     print_section "Setup Complete"
@@ -104,7 +107,8 @@ main() {
             19) install_zsh ;;
             20) configure_git ;;
             21) install_bun ;;
-            22) view_log ;;
+            22) install_nvidia_drivers ;;
+            23) view_log ;;
             0) echo "Goodbye!"; exit 0 ;;
             *) print_error "Invalid option" ;;
         esac
