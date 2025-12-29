@@ -8,7 +8,7 @@ install_zed_editor() {
     print_section "Installing Zed Editor"
 
     if command -v zed &> /dev/null; then
-        print_info "Zed Editor already installed"
+        print_info "Zed Editor already installed ($(zed --version 2>/dev/null || echo 'version unknown'))"
         return 0
     fi
 
@@ -30,8 +30,7 @@ install_bun() {
     print_section "Installing Bun"
 
     if command -v bun &> /dev/null; then
-        print_info "Bun already installed"
-        bun --version
+        print_info "Bun already installed ($(bun --version))"
         return 0
     fi
 
@@ -40,7 +39,6 @@ install_bun() {
     if curl -fsSL https://bun.sh/install | bash >> "$LOG_FILE" 2>&1; then
         print_success "Bun installed successfully"
 
-        # Add Bun to PATH if not already there
         if ! grep -q '.bun/bin' "$HOME/.bashrc"; then
             echo '' >> "$HOME/.bashrc"
             echo '# Bun configuration' >> "$HOME/.bashrc"
@@ -63,5 +61,10 @@ install_editors() {
     print_section "Installing Text Editors"
 
     install_zed_editor
-    run_command "sudo snap install sublime-text --classic" "Sublime Text installed"
+
+    if snap list 2>/dev/null | grep -q "sublime-text"; then
+        print_info "Sublime Text already installed"
+    else
+        run_command "sudo snap install sublime-text --classic" "Sublime Text installed"
+    fi
 }

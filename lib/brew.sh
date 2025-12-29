@@ -8,8 +8,7 @@ install_homebrew() {
     print_section "Installing Homebrew"
 
     if command -v brew &> /dev/null; then
-        print_info "Homebrew already installed"
-        brew --version | head -n 1
+        print_info "Homebrew already installed ($(brew --version | head -n 1))"
         return 0
     fi
 
@@ -46,21 +45,66 @@ install_brew_packages() {
         return 1
     fi
 
-    run_command "brew install pyenv" "Pyenv installed"
-    run_command "brew install nvm" "NVM installed"
-    run_command "brew install openjdk@21" "OpenJDK 21 installed"
-    run_command "brew install nginx" "Nginx installed"
+    if brew list pyenv &> /dev/null; then
+        print_info "Pyenv already installed"
+    else
+        run_command "brew install pyenv" "Pyenv installed"
+    fi
 
-    run_command "brew install sqlite" "SQLite installed"
-    run_command "brew install mysql" "MySQL installed"
+    if brew list nvm &> /dev/null; then
+        print_info "NVM already installed"
+    else
+        run_command "brew install nvm" "NVM installed"
+    fi
 
-    run_command "brew install starship" "Starship prompt installed"
-    run_command "brew install zsh-autosuggestions" "Zsh autosuggestions installed"
+    if brew list openjdk@21 &> /dev/null; then
+        print_info "OpenJDK 21 already installed"
+    else
+        run_command "brew install openjdk@21" "OpenJDK 21 installed"
+    fi
 
-    run_command "brew tap leoafarias/fvm" "FVM tap added"
-    run_command "brew install fvm" "FVM installed"
+    if brew list nginx &> /dev/null; then
+        print_info "Nginx already installed"
+    else
+        run_command "brew install nginx" "Nginx installed"
+    fi
 
-    run_command "brew install alembic" "Alembic installed"
+    if brew list sqlite &> /dev/null; then
+        print_info "SQLite already installed"
+    else
+        run_command "brew install sqlite" "SQLite installed"
+    fi
+
+    if brew list mysql &> /dev/null; then
+        print_info "MySQL already installed"
+    else
+        run_command "brew install mysql" "MySQL installed"
+    fi
+
+    if brew list starship &> /dev/null; then
+        print_info "Starship already installed"
+    else
+        run_command "brew install starship" "Starship prompt installed"
+    fi
+
+    if brew list zsh-autosuggestions &> /dev/null; then
+        print_info "Zsh autosuggestions already installed"
+    else
+        run_command "brew install zsh-autosuggestions" "Zsh autosuggestions installed"
+    fi
+
+    if brew list fvm &> /dev/null; then
+        print_info "FVM already installed"
+    else
+        run_command "brew tap leoafarias/fvm" "FVM tap added"
+        run_command "brew install fvm" "FVM installed"
+    fi
+
+    if brew list alembic &> /dev/null; then
+        print_info "Alembic already installed"
+    else
+        run_command "brew install alembic" "Alembic installed"
+    fi
 
     if ! grep -q 'NVM_DIR' "$HOME/.bashrc"; then
         cat >> "$HOME/.bashrc" << 'EOF'
@@ -71,6 +115,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "/home/linuxbrew/.linuxbrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/home/linuxbrew/.linuxbrew/opt/nvm/etc/bash_completion.d/nvm"
 EOF
         print_success "NVM added to .bashrc"
+    else
+        print_info "NVM already configured in .bashrc"
     fi
 
     if ! grep -q 'pyenv init' "$HOME/.bashrc"; then
@@ -82,16 +128,22 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
 EOF
         print_success "Pyenv added to .bashrc"
+    else
+        print_info "Pyenv already configured in .bashrc"
     fi
 
     if ! grep -q 'starship init' "$HOME/.bashrc"; then
         echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
         print_success "Starship added to .bashrc"
+    else
+        print_info "Starship already configured in .bashrc"
     fi
 
     if ! grep -q 'zsh-autosuggestions' "$HOME/.zshrc" 2>/dev/null; then
         echo 'source /home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> "$HOME/.zshrc"
         print_success "Zsh autosuggestions added to .zshrc"
+    else
+        print_info "Zsh autosuggestions already configured in .zshrc"
     fi
 
     print_info "MySQL service: brew services start mysql"

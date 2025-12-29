@@ -23,6 +23,19 @@ install_nvidia_drivers() {
 
     print_success "NVIDIA GPU detected!"
 
+    # Check if NVIDIA driver is already installed
+    if command -v nvidia-smi &> /dev/null; then
+        print_info "NVIDIA driver already installed"
+        nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -n1 | xargs -I {} print_info "Driver version: {}"
+
+        echo -n "Do you want to reinstall/update NVIDIA drivers? (y/N): "
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            print_info "Skipping NVIDIA driver installation"
+            return 0
+        fi
+    fi
+
     local distro=$(detect_distro)
     print_info "Detected distribution: $distro"
 

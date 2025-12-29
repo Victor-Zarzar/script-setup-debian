@@ -17,9 +17,23 @@ update_system() {
 setup_snapd() {
     print_section "Setting Up Snapd"
 
-    run_command "sudo apt install -y snapd" "Snapd installed"
-    run_command "sudo systemctl enable --now snapd.socket" "Snapd service enabled"
-    run_command "sudo ln -sf /var/lib/snapd/snap /snap" "Snap symlink created"
+    if dpkg -l | grep -q "^ii  snapd"; then
+        print_info "Snapd already installed"
+    else
+        run_command "sudo apt install -y snapd" "Snapd installed"
+    fi
+
+    if systemctl is-active snapd.socket &> /dev/null; then
+        print_info "Snapd service already active"
+    else
+        run_command "sudo systemctl enable --now snapd.socket" "Snapd service enabled"
+    fi
+
+    if [ -L /snap ] || [ -d /snap ]; then
+        print_info "Snap symlink already exists"
+    else
+        run_command "sudo ln -sf /var/lib/snapd/snap /snap" "Snap symlink created"
+    fi
 
     log_action "Snapd configured"
 }
@@ -45,7 +59,11 @@ setup_directories() {
 install_zsh() {
     print_section "Installing Zsh"
 
-    run_command "sudo apt install -y zsh" "Zsh installed"
+    if command -v zsh &> /dev/null; then
+        print_info "Zsh already installed ($(zsh --version))"
+    else
+        run_command "sudo apt install -y zsh" "Zsh installed"
+    fi
 
     print_info "To make Zsh your default shell, run: chsh -s \$(which zsh)"
 }
